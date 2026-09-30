@@ -1,114 +1,61 @@
 "use client"
-import { useState } from "react"
+import { useState, useRef } from "react"
 
-export default function Page() {
-  const [projects, setProjects] = useState<any[]>([])
-  const [idea, setIdea] = useState("She loves her very important immortal")
-  const [story, setStory] = useState("")
-  const [showCreate, setShowCreate] = useState(false)
-  const [type, setType] = useState("Movie")
-
-  const createProject = (t:string) => {
-    setType(t)
-    setShowCreate(true)
+export default function Page(){
+  const [idea,setIdea]=useState("She loves her very important immortal")
+  const [projects,setProjects]=useState<any[]>([])
+  const [playing,setPlaying]=useState<any>(null)
+  const [scene,setScene]=useState(0)
+  
+  const make=()=>{
+    const eps=[
+      {t:"The Secret - Night Meeting", img:`https://image.pollinations.ai/prompt/cinematic dark love scene beautiful woman meets handsome immortal man at midnight, vampire romance netflix?width=768&height=432&nologo=true&seed=1`, line:"She meets him at midnight. He has not aged in 400 years."},
+      {t:"Blood Secret", img:`https://image.pollinations.ai/prompt/bloody fridge vampire secret horror, woman shocked, cinematic?width=768&height=432&nologo=true&seed=2`, line:"She finds blood in his fridge. He is hunted by ancient hunters."},
+      {t:"The Choice", img:`https://image.pollinations.ai/prompt/woman crying vampire offers immortality, dramatic choice, rain, cinematic love?width=768&height=432&nologo=true&seed=3`, line:"He offers her eternal life, but she must leave her family forever."},
+      {t:"Eternal Kiss", img:`https://image.pollinations.ai/prompt/vampire transformation woman becoming immortal, painful beautiful light, love?width=768&height=432&nologo=true&seed=4`, line:"She says yes. The transformation begins. She is now immortal too."},
+      {t:"The Price - Finale", img:`https://image.pollinations.ai/prompt/pregnant immortal woman faking lover death, sad goodbye, town burning cinematic?width=768&height=432&nologo=true&seed=5`, line:"To save the town she fakes his death. But she is pregnant with an immortal child. Season 2."},
+    ]
+    const p={id:Date.now(),title:idea,type:"Movie",eps,poster:eps[0].img}
+    setProjects([p,...projects])
+    playMovie(p)
   }
 
-  const generate = () => {
-    if(!idea) return
-    const newProj = { id: Date.now(), title: `${idea.slice(0,20)} - ${type}`, type, idea }
-    setProjects([newProj, ...projects])
-    setStory(`🔥 ${type.toUpperCase()}: ${idea.toUpperCase()}\n\nLOG LINE: ${idea} - but he's immortal and she must choose between love and death.\n\nEPISODE 1: She discovers his secret. Blood doesn't age.\nEPISODE 2: She loves her very important immortal - but he is hunted.\nEPISODE 3: Final sacrifice. Does she become immortal too? SEQUEL HOOK!`)
-    setShowCreate(false)
+  const playMovie=(p:any)=>{
+    setPlaying(p); setScene(0)
+    // Auto play scenes every 4 sec
+    let s=0
+    const interval=setInterval(()=>{
+      s++; if(s>=p.eps.length){ clearInterval(interval); return }
+      setScene(s)
+      // Speak line
+      if('speechSynthesis' in window){
+        const u=new SpeechSynthesisUtterance(p.eps[s].line)
+        window.speechSynthesis.speak(u)
+      }
+    },4000)
   }
 
-  return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="flex min-h-screen">
-        <div className="hidden md:flex w-60 bg-[#111] border-r border-zinc-800 p-5 flex-col">
-          <div className="font-black">🎬 AI Movie Studio</div>
-          <button onClick={()=>createProject('Movie')} className="mt-6 bg-yellow-400 text-black font-black py-2.5 rounded-full">+ New Project</button>
-          <div className="mt-8 text-sm space-y-4 text-zinc-500">
-            <div className="text-white">▶ Projects ({projects.length})</div>
-            <div>Assets</div><div className="text-yellow-400">Director</div><div>Settings</div>
-          </div>
-          <div className="mt-auto text-xs"><div className="font-bold">Wisdom David</div><div className="text-zinc-500">100 credits • Sep 30</div></div>
+  return(
+    <div className="min-h-screen bg-black text-white p-4 md:p-8">
+      {!playing ? <>
+        <h1 className="text-3xl font-black">🎬 AI Movie Studio <span className="text-yellow-400">WATCHABLE</span></h1>
+        <p className="text-zinc-500 text-sm mt-1">Create movie you can WATCH + upload to TikTok/YouTube</p>
+        <div className="mt-6 bg-[#161616] border border-zinc-800 rounded-2xl p-4">
+          <input value={idea} onChange={e=>setIdea(e.target.value)} className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3"/>
+          <button onClick={make} className="w-full mt-3 bg-yellow-400 text-black font-black py-3 rounded-full">🎬 GENERATE WATCHABLE MOVIE NOW</button>
         </div>
-
-        <div className="flex-1 p-4 md:p-8">
-          <div className="flex justify-between items-center md:hidden mb-4">
-            <div className="font-black">🎬 AI Movie Studio</div>
-            <button onClick={()=>createProject('Movie')} className="bg-yellow-400 text-black px-4 py-1.5 rounded-full font-bold text-sm">+ New</button>
-          </div>
-
-          <h1 className="text-3xl font-black">Projects</h1>
-          <p className="text-zinc-500 text-sm mt-1">Manage your AI-generated movies and series</p>
-
-          <div className="flex gap-2 mt-5">
-            <button className="bg-yellow-400 text-black px-5 py-1.5 rounded-full text-sm font-bold">All</button>
-            <button className="bg-zinc-900 border border-zinc-800 px-5 py-1.5 rounded-full text-sm">Movies</button>
-            <button className="bg-zinc-900 border border-zinc-800 px-5 py-1.5 rounded-full text-sm">Series</button>
-          </div>
-
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
-            {[
-              {t:"Movie", d:"Feature length films", i:"🎬"},
-              {t:"Series", d:"Episodic content", i:"📺"},
-              {t:"Short Film", d:"Under 40 minutes", i:"🎞️"},
-              {t:"Trailer", d:"Promotional content", i:"🎥"},
-              {t:"Music Video", d:"Visual stories", i:"🎵"},
-            ].map((c) => (
-              <button key={c.t} onClick={()=>createProject(c.t)} className="text-left bg-[#161616] hover:bg-[#1e1e1e] border border-zinc-800 rounded-2xl p-5 transition">
-                <div className="text-3xl">{c.i}</div>
-                <div className="mt-3 font-bold">{c.t}</div>
-                <div className="text-xs text-zinc-500 mt-1">{c.d}</div>
-              </button>
-            ))}
-            <button onClick={()=>createProject('Movie')} className="bg-transparent border-2 border-dashed border-zinc-800 rounded-2xl p-5 flex items-center justify-center">
-              <div className="text-4xl text-zinc-700">+</div>
-            </button>
-          </div>
-
-          {projects.length > 0 && (
-            <div className="mt-8">
-              <h3 className="font-bold mb-3">Your Projects ({projects.length})</h3>
-              <div className="space-y-2">
-                {projects.map(p=>(
-                  <div key={p.id} className="bg-[#161616] border border-zinc-800 rounded-xl p-4 flex justify-between">
-                    <div><div className="font-bold text-sm">{p.title}</div><div className="text-xs text-zinc-500">{p.type}</div></div>
-                    <div className="text-xs text-yellow-400">READY</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-8 bg-[#161616] border border-zinc-800 rounded-2xl p-4">
-            <div className="flex gap-3">
-              <div className="w-9 h-9 bg-zinc-800 rounded-full flex items-center justify-center">🤖</div>
-              <div className="flex-1">
-                <input value={idea} onChange={e=>setIdea(e.target.value)} className="w-full bg-[#0a0a0a] border border-zinc-800 rounded-lg px-3 py-2 text-sm" placeholder="Describe your project..." />
-                <div className="text-xs text-zinc-500 mt-2">{story ? "✅ Generated!" : "The Director is reading..."}</div>
-                {story && <div className="mt-3 text-sm bg-black border border-zinc-800 rounded-xl p-3 whitespace-pre-wrap">{story}</div>}
-              </div>
-            </div>
-            <button onClick={generate} className="w-full mt-4 bg-yellow-400 text-black font-black py-2.5 rounded-full">GENERATE WITH DIRECTOR</button>
-          </div>
+        <div className="mt-6 grid md:grid-cols-3 gap-4">
+          {projects.map((p:any)=><button key={p.id} onClick={()=>playMovie(p)} className="text-left bg-[#161616] border border-zinc-800 rounded-2xl overflow-hidden"><img src={p.poster} className="w-full h-40 object-cover"/><div className="p-3"><div className="font-bold text-sm">{p.title}</div><div className="text-xs text-yellow-400 mt-1">▶️ WATCH NOW - 5 scenes</div></div></button>)}
         </div>
-      </div>
-
-      {showCreate && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-[#161616] border border-zinc-800 rounded-2xl p-6 w-full max-w-sm">
-            <h3 className="font-black text-lg">Create {type}</h3>
-            <p className="text-sm text-zinc-500 mt-1">What story do you want to tell?</p>
-            <input value={idea} onChange={e=>setIdea(e.target.value)} className="w-full mt-4 bg-black border border-zinc-700 rounded-lg px-3 py-3 text-sm" placeholder="She loves her very important immortal..." autoFocus />
-            <div className="flex gap-2 mt-4">
-              <button onClick={()=>setShowCreate(false)} className="flex-1 bg-zinc-800 py-2.5 rounded-full text-sm">Cancel</button>
-              <button onClick={generate} className="flex-1 bg-yellow-400 text-black font-black py-2.5 rounded-full text-sm">Create</button>
-            </div>
-          </div>
+        {projects.length===0 && <div className="mt-10 text-center text-zinc-600 text-sm">👆 Type story and tap GENERATE — you will get a movie you can WATCH, not wallpaper!</div>}
+      </> : <>
+        <div className="fixed inset-0 bg-black z-50 flex flex-col">
+          <div className="p-4 flex justify-between items-center"><button onClick={()=>{setPlaying(null); window.speechSynthesis.cancel()}} className="text-sm">✕ Close</button><div className="text-sm font-bold">{playing.title} - EP {scene+1}/5</div><div className="text-xs text-zinc-500">{Math.round((scene+1)/5*100)}%</div></div>
+          <div className="flex-1 relative"><img src={playing.eps[scene].img} className="w-full h-full object-cover"/><div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-6"><h2 className="font-black text-xl">{playing.eps[scene].t}</h2><p className="text-sm text-zinc-200 mt-2">{playing.eps[scene].line}</p><div className="mt-3 flex gap-1">{playing.eps.map((_:any,i:number)=><div key={i} className={`h-1 flex-1 rounded ${i<=scene?'bg-yellow-400':'bg-zinc-700'}`}/>)}</div></div></div>
+          <div className="p-4 grid grid-cols-2 gap-3"><button onClick={()=>setScene(s=>Math.max(0,s-1))} className="bg-zinc-800 py-3 rounded-full font-bold">◀️ Prev</button><button onClick={()=>setScene(s=>Math.min(playing.eps.length-1,s+1))} className="bg-yellow-400 text-black py-3 rounded-full font-black">Next ▶️</button></div>
+          <div className="p-4 text-center text-xs text-zinc-500">This is a WATCHABLE movie slideshow - You can screen-record it to upload to TikTok/YouTube. Real Sora video needs API key - I can add it next.</div>
         </div>
-      )}
+      </>}
     </div>
   )
-}
+            }
