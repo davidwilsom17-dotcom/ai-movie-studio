@@ -1,21 +1,9 @@
 'use client'
 import { useState } from 'react'
-import AIDirector from '@/components/director/AIDirector'
-import StoryBible from '@/components/story/StoryBible'
-import CharacterStudio from '@/components/characters/CharacterStudio'
-import LocationStudio from '@/components/locations/LocationStudio'
-import ScreenplayEditor from '@/components/screenplay/ScreenplayEditor'
-import SceneManager from '@/components/scenes/SceneManager'
-import ShotPlanner from '@/components/shots/ShotPlanner'
-import VoiceStudio from '@/components/voice/VoiceStudio'
-import MusicStudio from '@/components/audio/MusicStudio'
-import TimelineEditor from '@/components/editor/TimelineEditor'
-import PosterGenerator from '@/components/poster/PosterGenerator'
-import ExportStudio from '@/components/export/ExportStudio'
 
 export default function Studio(){
- const [tab,setTab] = useState('director')
  const [points] = useState(1000000000000)
+ const [tab,setTab] = useState('director')
  const tabs = [
   {id:'director', label:'🎬 Director'},
   {id:'story', label:'📖 Story'},
@@ -33,29 +21,25 @@ export default function Studio(){
  return (
   <div className="min-h-screen bg-black text-white">
    <header className="border-b border-zinc-800 p-4 flex justify-between items-center">
-    <h1 className="font-black">CINEGEN • AI MOVIE STUDIO</h1>
-    <div className="flex items-center gap-3">
-     <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-5 py-2 rounded-full font-black text-sm animate-pulse">💎 {points.toLocaleString()} POINTS</div>
-     <div className="text-xs bg-white text-black px-3 py-1 rounded-full font-bold">DAVID WILSON • OWNER</div>
+    <h1 className="font-black text-sm">CINEGEN • AI MOVIE STUDIO</h1>
+    <div className="flex items-center gap-2">
+     <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-4 py-2 rounded-full font-black text-xs">💎 {points.toLocaleString()} POINTS</div>
+     <div className="text-[10px] bg-white text-black px-2 py-1 rounded-full font-bold">DAVID WILSON • OWNER</div>
     </div>
    </header>
    <div className="flex">
-    <nav className="w-64 border-r border-zinc-800 p-2 space-y-1 min-h-screen">
-     {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} className={`w-full text-left px-4 py-3 rounded-lg text-sm ${tab===t.id?'bg-white text-black font-bold':'hover:bg-zinc-900 text-zinc-400'}`}>{t.label}</button>)}
+    <nav className="w-44 border-r border-zinc-800 p-2 space-y-1">
+     {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} className={`w-full text-left px-3 py-2.5 rounded-lg text-xs ${tab===t.id?'bg-white text-black font-bold':'hover:bg-zinc-900 text-zinc-400'}`}>{t.label}</button>)}
     </nav>
-    <main className="flex-1 p-6 bg-zinc-950">
-     {tab==='director' && <AIDirector/>}
-     {tab==='story' && <StoryBible/>}
-     {tab==='characters' && <CharacterStudio/>}
-     {tab==='locations' && <LocationStudio/>}
-     {tab==='screenplay' && <ScreenplayEditor/>}
-     {tab==='scenes' && <SceneManager/>}
-     {tab==='shots' && <ShotPlanner/>}
-     {tab==='voice' && <VoiceStudio/>}
-     {tab==='music' && <MusicStudio/>}
-     {tab==='editor' && <TimelineEditor/>}
-     {tab==='poster' && <PosterGenerator/>}
-     {tab==='export' && <ExportStudio/>}
+    <main className="flex-1 p-6 bg-zinc-950 min-h-screen">
+     <h2 className="text-2xl font-bold mb-4">{tabs.find(x=>x.id===tab)?.label} Studio</h2>
+     <div className="bg-zinc-900 p-8 rounded-xl border border-zinc-800 text-center">
+      <p className="text-5xl mb-4">💎</p>
+      <p className="text-xl font-black">{points.toLocaleString()} POINTS</p>
+      <p className="text-zinc-400 mt-2 text-sm">Welcome David! Your balance: 1 Trillion Points (1000 Billion)</p>
+      <p className="mt-6 text-xs text-zinc-500">Current Tab: {tab.toUpperCase()} • Ready to generate 90-min movie</p>
+      <button onClick={()=>alert(`Using ${tab} - Points: ${points.toLocaleString()}`)} className="mt-6 bg-white text-black px-6 py-2 rounded-full font-bold text-sm">Generate with {tab}</button>
+     </div>
     </main>
    </div>
   </div>
