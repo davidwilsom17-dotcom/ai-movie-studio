@@ -1,10 +1,10 @@
 import type { Handler } from "@netlify/functions";
 
-const RUNWAY_API = "https://api.dev.runwayml.com/v1/text_to_video";
+const RUNWAY_API = "https://api.dev.runwayml.com/v1";
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers: { "Access-Control-Allow-Origin": "*" }, body: "" };
+    return { statusCode: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type" } };
   }
   if (event.httpMethod!== "POST") {
     return { statusCode: 405, body: "Use POST" };
@@ -12,49 +12,69 @@ export const handler: Handler = async (event) => {
 
   const apiKey = process.env.RUNWAY_API_KEY;
   if (!apiKey) {
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Add RUNWAY_API_KEY in Netlify environment variables" }),
-    };
+    return { statusCode: 500, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Add RUNWAY_API_KEY in Netlify env vars" }) };
   }
 
-  const { script, genre, style } = JSON.parse(event.body || "{}");
-  const shots = script.split("\n").filter((s:string)=>s.trim()).slice(0,4);
+  try {
+    const body = JSON.parse(event.body || "{}");
+    const { prompt, imageUrl, duration = 5 } = body;
 
-  const videos = [];
-  for (const shot of shots) {
-    const prompt = `${shot}. Genre: ${genre}. Style: ${style}. Photorealistic cinematic real human, natural movement, no cartoon, no slideshow.`;
+    if (!imageUrl) {
+      return { statusCode: 400, body: JSON.stringify({ error: "imageUrl required" }) };
+    }
 
-    const createRes = await fetch(RUNWAY_API, {
+    // Start generation
+    const startRes = await fetch(`${RUNWAY_API}/image_to_video`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
         "X-Runway-Version": "2024-11-06",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({ model: "gen4_turbo", promptText: prompt, ratio: "1280:720", duration: 5 }),
+      body: JSON.stringify({
+        model: "gen4_turbo",
+        prompt_image: imageUrl,
+        prompt_text: prompt || "cinematic motion, subtle camera movement",
+        duration: Number(duration),
+        ratio: "1280:720"
+      })
     });
-    const task = await createRes.json();
-    if (!task.id) continue;
 
-    // Wait for video
-    for (let i=0; i<40; i++) {
-      await new Promise(r=>setTimeout(r,3000));
-      const check = await fetch(`https://api.dev.runwayml.com/v1/tasks/${task.id}`, {
-        headers: { Authorization: `Bearer ${apiKey}`, "X-Runway-Version": "2024-11-06" },
+    const startData = await startRes.json();
+    if (!startRes.ok) {
+      return { statusCode: 500, body: JSON.stringify({ error: "Runway start failed", details: startData }) };
+    }
+
+    const taskId = startData.id;
+
+    // Poll
+    let videoUrl = null;
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 4000));
+      const taskRes = await fetch(`${RUNWAY_API}/tasks/${taskId}`, {
+        headers: { "Authorization": `Bearer ${apiKey}`, "X-Runway-Version": "2024-11-06" }
       });
-      const data = await check.json();
-      if (data.status === "SUCCEEDED") {
-        videos.push(data.output[0]);
+      const taskData = await taskRes.json();
+      if (taskData.status === "SUCCEEDED") {
+        videoUrl = taskData.output[0];
         break;
       }
+      if (taskData.status === "FAILED") {
+        return { statusCode: 500, body: JSON.stringify({ error: "Runway failed", details: taskData }) };
+      }
     }
-  }
 
-  return {
-    statusCode: 200,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-    body: JSON.stringify({ videos }),
-  };
+    if (!videoUrl) {
+      return { statusCode: 202, body: JSON.stringify({ status: "processing", taskId, message: "Video still generating, poll again with taskId" }) };
+    }
+
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ videoUrl, taskId })
+    };
+
+  } catch (e: any) {
+    return { statusCode: 500, body: JSON.stringify({ error: e.message }) };
+  }
 };
